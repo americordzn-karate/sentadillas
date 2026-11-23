@@ -1,1 +1,1032 @@
-hfghfh
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>40 SENTADILLAS · Senshi-Kan</title>
+
+<style>
+*{
+    margin:0;padding:0;box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;-webkit-user-select:none;
+}
+html,body{width:100%;height:100%;}
+body{background:#111;color:#fff;overflow:hidden;position:fixed;inset:0;}
+
+button{
+    border:none;border-radius:10px;padding:12px 24px;
+    font-size:18px;font-weight:bold;cursor:pointer;
+}
+
+/* ---------- Escenario ---------- */
+#escenario{position:absolute;inset:0;background:#000;overflow:hidden;}
+#video{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;transform:scaleX(-1);
+}
+#capaPose{
+    position:absolute;inset:0;width:100%;height:100%;
+    transform:scaleX(-1);pointer-events:none;
+}
+#destello{
+    position:absolute;inset:0;pointer-events:none;
+    border:0 solid #2ecc71;opacity:0;z-index:15;
+    box-shadow:inset 0 0 90px 30px rgba(46,204,113,.75);
+}
+#destello.activo{animation:flash .45s ease-out;}
+@keyframes flash{0%{opacity:1;}100%{opacity:0;}}
+
+#mas1{
+    position:absolute;left:50%;top:42%;
+    transform:translate(-50%,-50%);
+    font-size:min(30vw,170px);font-weight:900;color:#2ecc71;
+    text-shadow:0 6px 18px rgba(0,0,0,.8);
+    opacity:0;pointer-events:none;z-index:16;
+}
+#mas1.activo{animation:pop .6s ease-out;}
+@keyframes pop{
+    0%{opacity:0;transform:translate(-50%,-30%) scale(.5);}
+    25%{opacity:1;transform:translate(-50%,-50%) scale(1.15);}
+    100%{opacity:0;transform:translate(-50%,-90%) scale(1);}
+}
+
+/* ---------- HUD ---------- */
+#hud{
+    position:absolute;top:10px;left:10px;right:10px;z-index:20;
+    display:flex;justify-content:space-between;align-items:center;
+    background:rgba(0,0,0,.72);border-radius:12px;padding:10px;
+}
+.hudBox{display:flex;flex-direction:column;align-items:center;min-width:70px;}
+.hudLabel{font-size:12px;}
+.hudValue{font-size:22px;font-weight:bold;}
+#hudSentadillas{color:#2ecc71;font-size:30px;}
+
+#contadorGrande{
+    position:absolute;left:0;right:0;bottom:90px;z-index:18;
+    text-align:center;font-size:min(34vw,200px);font-weight:900;
+    color:#fff;text-shadow:0 6px 20px rgba(0,0,0,.85);
+    pointer-events:none;display:none;
+}
+#pista{
+    position:absolute;left:10px;right:10px;bottom:20px;z-index:20;
+    text-align:center;font-size:18px;font-weight:bold;
+    background:rgba(0,0,0,.65);border-radius:12px;padding:10px;
+    min-height:44px;
+}
+
+#panelCentral{
+    position:absolute;inset:0;z-index:30;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;
+}
+#textoCentral{text-align:center;font-weight:800;text-shadow:0 4px 14px rgba(0,0,0,.7);}
+.cuentaNumero{font-size:min(30vw,190px);color:#FFD700;}
+.cuentaYa{font-size:min(18vw,110px);color:#2ecc71;}
+.mensajeCalib{
+    font-size:max(18px,4.5vw);max-width:86vw;line-height:1.4;
+    background:rgba(0,0,0,.65);padding:16px 20px;border-radius:14px;
+}
+
+/* ---------- Pantalla de inicio ---------- */
+#pantallaInicio{
+    position:absolute;inset:0;background:#111;z-index:50;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    gap:18px;padding:20px;
+}
+#pantallaInicio h1{font-size:40px;color:#FFD700;text-align:center;}
+#pantallaInicio p{text-align:center;max-width:520px;line-height:1.5;}
+#datosJugador{font-size:20px;}
+#btnIniciar{background:#2ecc71;color:#fff;}
+#btnIniciar:disabled{background:#555;cursor:not-allowed;}
+#estadoIntentos,#estadoCamara{text-align:center;min-height:22px;}
+
+/* ---------- Resultado ---------- */
+#mensajeFinal{
+    position:absolute;inset:0;display:none;flex-direction:column;
+    justify-content:center;align-items:center;
+    background:rgba(0,0,0,.92);z-index:100;gap:16px;padding:20px;
+}
+#mensajeTitulo{font-size:36px;text-align:center;}
+#mensajePuntos{font-size:34px;color:#FFD700;}
+#mensajeGuardado,#mensajeIntentos{font-size:16px;color:#ccc;text-align:center;}
+#grupoBotones{display:flex;flex-direction:column;gap:10px;width:min(320px,90vw);margin-top:8px;}
+#btnJugarOtra{background:#2ecc71;color:#fff;}
+#btnVolver{background:#fff;color:#111;}
+#btnReintentarGuardar{background:#f39c12;color:#fff;display:none;}
+#mensajeFinal button:disabled{background:#555;color:#aaa;cursor:not-allowed;}
+</style>
+</head>
+
+<body>
+
+<div id="escenario">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="capaPose"></canvas>
+    <div id="destello"></div>
+    <div id="mas1">+1</div>
+
+    <div id="hud">
+        <div class="hudBox">
+            <div class="hudLabel">TIEMPO</div>
+            <div class="hudValue" id="hudTiempo">40</div>
+        </div>
+        <div class="hudBox">
+            <div class="hudLabel">SENTADILLAS</div>
+            <div class="hudValue" id="hudSentadillas">0</div>
+        </div>
+        <div class="hudBox">
+            <div class="hudLabel">INTENTO</div>
+            <div class="hudValue" id="hudIntentos">-</div>
+        </div>
+    </div>
+
+    <div id="contadorGrande">0</div>
+    <div id="panelCentral"><div id="textoCentral"></div></div>
+    <div id="pista"></div>
+</div>
+
+<div id="pantallaInicio">
+    <h1>40 SENTADILLAS</h1>
+    <p>
+        Realiza el mayor número de sentadillas en <b>40 segundos</b>.
+        Cada sentadilla correcta vale <b>1 punto</b>.
+    </p>
+    <p>
+        <b>Cómo colocarte:</b> apoya el dispositivo a unos 2 o 3 metros, colócate
+        <b>de perfil</b> ante la cámara y asegúrate de verte <b>de cuerpo completo</b>
+        (de la cabeza a los pies).
+    </p>
+    <p>
+        Una sentadilla cuenta cuando flexionas bien las rodillas, bajas la cabeza
+        y vuelves a quedar de pie. Escucharás un sonido y verás un destello verde.
+    </p>
+    <div id="datosJugador"></div>
+    <button id="btnIniciar" disabled>INICIAR</button>
+    <div id="estadoIntentos">Verificando intentos disponibles...</div>
+    <div id="estadoCamara">Preparando cámara...</div>
+</div>
+
+<div id="mensajeFinal">
+    <div id="mensajeTitulo"></div>
+    <div id="mensajePuntos"></div>
+    <div id="mensajeGuardado"></div>
+    <div id="mensajeIntentos"></div>
+    <div id="grupoBotones">
+        <button id="btnReintentarGuardar">REINTENTAR GUARDADO</button>
+        <button id="btnJugarOtra" disabled>VOLVER A JUGAR</button>
+        <button id="btnVolver" disabled>VOLVER AL PORTAL</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbwX5w8iiwkJVbGtpz-5f20U9jue2MC0vouE3blkHXo9CIMqg9bvCZrAYE8WKxH4gXGWzg/exec";
+
+const PORTAL_URL  = "https://americordzn-karate.github.io/retos/";
+const NOMBRE_RETO = "40 SENTADILLAS";   /* debe coincidir con Catalogo_Retos */
+
+const DURACION_JUEGO   = 40;   /* segundos de juego */
+const CUENTA_REGRESIVA = 5;    /* segundos antes de iniciar */
+
+/* ----- Criterio de sentadilla correcta (ajustable) ----- */
+const ANGULO_RODILLA_ABAJO = 100;  /* grados: la rodilla debe flexionarse a este ángulo o menos */
+const CAIDA_CABEZA_MIN     = 0.15; /* la cabeza debe bajar al menos 15 % de la altura de pie */
+const ANGULO_RODILLA_ARRIBA = 160; /* grados: para contar debe volver a quedar casi extendida */
+const RECUPERACION_ALTURA   = 0.93;/* y recuperar al menos 93 % de su altura de pie */
+const MIN_ENTRE_REPS_MS     = 350; /* evita contar dos veces por temblor de la detección */
+const VISIBILIDAD_MIN       = 0.5; /* visibilidad mínima de los puntos del cuerpo */
+
+const CALIB_ESTABLE_MS = 2000; /* tiempo de pie, quieto y visible para calibrar */
+
+
+/* =====================================================
+   PARÁMETROS DEL PORTAL
+===================================================== */
+
+const params   = new URLSearchParams(window.location.search);
+
+const nombre   = params.get("nombre")   || "";
+const edad     = params.get("edad")     || "";
+const reto     = params.get("reto")     || "40SENTADILLAS";
+const estatura = params.get("estatura") || "";
+const peso     = params.get("peso")     || "";
+
+/* textContent: evita inyectar HTML desde la URL */
+document.getElementById("datosJugador").textContent = nombre;
+
+let intentosPermitidos = 0;
+let intentosRealizados = 0;
+let intentosVerificados = false;
+let limiteAlcanzado = false;
+let camaraLista = false;
+let camaraError = false;
+
+
+/* =====================================================
+   REFERENCIAS DOM
+===================================================== */
+
+const elVideo    = document.getElementById("video");
+const elCapa     = document.getElementById("capaPose");
+const ctxCapa    = elCapa.getContext("2d");
+const elBtnIniciar = document.getElementById("btnIniciar");
+const elEstadoInt  = document.getElementById("estadoIntentos");
+const elEstadoCam  = document.getElementById("estadoCamara");
+const elTexto   = document.getElementById("textoCentral");
+const elPista   = document.getElementById("pista");
+const elGrande  = document.getElementById("contadorGrande");
+const elTiempo  = document.getElementById("hudTiempo");
+const elSent    = document.getElementById("hudSentadillas");
+const elDestello = document.getElementById("destello");
+const elMas1    = document.getElementById("mas1");
+
+
+/* =====================================================
+   AUDIO
+===================================================== */
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, duration, type, vol){
+    try{
+        const osc  = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type || "sine";
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(vol || 0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }catch(e){}
+}
+
+function sonidoCuenta(){  playTone(440,.18,"square",.2); }
+function sonidoYa(){      playTone(880,.45,"sawtooth",.25); }
+function sonidoSentadilla(){
+    playTone(784,.12,"triangle",.3);
+    setTimeout(()=>playTone(1175,.16,"triangle",.3),70);
+}
+function sonidoFin(){
+    playTone(600,.15,"sine",.25);
+    setTimeout(()=>playTone(800,.15,"sine",.25),150);
+    setTimeout(()=>playTone(1000,.3,"sine",.25),300);
+}
+
+
+/* =====================================================
+   ESTADO DEL JUEGO
+===================================================== */
+
+const ESTADO = {
+    INICIO:"INICIO", CALIBRANDO:"CALIBRANDO",
+    CUENTA:"CUENTA", JUGANDO:"JUGANDO", FIN:"FIN"
+};
+
+let estado = ESTADO.INICIO;
+
+let sentadillas   = 0;
+let tiempoInicioJuego = 0;
+let idTemporizador = null;
+let guardado = false;
+let fotoFinal = "";
+
+/* Calibración */
+const calib = { inicioEstable:0, muestras:[], votosLado:{izq:0, der:0} };
+let alturaPie = 0;        /* altura de pie (tobillo - nariz) en fracción del cuadro */
+let ladoFinal = "izq";
+
+/* Detección */
+const det = { fase:"ARRIBA", angulo:180, ratio:1, ultimaRep:0, tieneDatos:false };
+
+/* Índices de MediaPipe Pose */
+const IDX = {
+    nariz:0,
+    izq:{ cadera:23, rodilla:25, tobillo:27 },
+    der:{ cadera:24, rodilla:26, tobillo:28 }
+};
+
+
+/* =====================================================
+   MENSAJES
+===================================================== */
+
+function mostrarCentral(clase, html){
+    elTexto.className = clase;
+    elTexto.innerHTML = html;
+}
+function limpiarCentral(){
+    elTexto.className = "";
+    elTexto.innerHTML = "";
+}
+function pista(t){ elPista.textContent = t; }
+
+function actualizarHudIntentos(){
+    document.getElementById("hudIntentos").textContent = intentosPermitidos > 0
+        ? `${Math.min(intentosRealizados+1, intentosPermitidos)}/${intentosPermitidos}`
+        : "-";
+}
+
+function intentosDisponibles(){
+    return intentosPermitidos - intentosRealizados;
+}
+
+
+/* =====================================================
+   GEOMETRÍA
+===================================================== */
+
+function visible(p){
+    return p && (p.visibility === undefined || p.visibility >= VISIBILIDAD_MIN);
+}
+
+function elegirLado(lm){
+    const s = (l) => (lm[IDX[l].cadera].visibility||0) +
+                     (lm[IDX[l].rodilla].visibility||0) +
+                     (lm[IDX[l].tobillo].visibility||0);
+    return s("izq") >= s("der") ? "izq" : "der";
+}
+
+/* Ángulo en la rodilla (cadera-rodilla-tobillo), en píxeles reales del video */
+function anguloRodilla(lm, lado){
+    const vw = elVideo.videoWidth  || 1;
+    const vh = elVideo.videoHeight || 1;
+    const c = lm[IDX[lado].cadera], r = lm[IDX[lado].rodilla], t = lm[IDX[lado].tobillo];
+
+    const v1x = (c.x - r.x) * vw, v1y = (c.y - r.y) * vh;
+    const v2x = (t.x - r.x) * vw, v2y = (t.y - r.y) * vh;
+
+    const dot = v1x*v2x + v1y*v2y;
+    const m   = Math.hypot(v1x,v1y) * Math.hypot(v2x,v2y);
+    if(m === 0) return 180;
+
+    return Math.acos(Math.max(-1, Math.min(1, dot/m))) * 180 / Math.PI;
+}
+
+/* ¿Se ve el cuerpo completo (cabeza, cadera, rodilla y tobillo) dentro del cuadro? */
+function cuerpoCompleto(lm, lado){
+    const n = lm[IDX.nariz];
+    const c = lm[IDX[lado].cadera], r = lm[IDX[lado].rodilla], t = lm[IDX[lado].tobillo];
+    if(!visible(n) || !visible(c) || !visible(r) || !visible(t)) return false;
+    if(n.y < 0.01 || t.y > 0.995) return false;
+    return true;
+}
+
+function mediana(arr){
+    const o = [...arr].sort((a,b)=>a-b);
+    return o[Math.floor(o.length/2)];
+}
+
+
+/* =====================================================
+   DIBUJO DEL ESQUELETO (guía visual)
+   El canvas se espeja por CSS igual que el video.
+===================================================== */
+
+function ajustarCapa(){
+    const dpr = window.devicePixelRatio || 1;
+    elCapa.width  = Math.floor(window.innerWidth  * dpr);
+    elCapa.height = Math.floor(window.innerHeight * dpr);
+    ctxCapa.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize", ajustarCapa);
+ajustarCapa();
+
+function aPantalla(p){
+    const W = window.innerWidth, H = window.innerHeight;
+    const vw = elVideo.videoWidth || 1, vh = elVideo.videoHeight || 1;
+    const esc = Math.max(W/vw, H/vh);
+    return {
+        x: p.x*vw*esc + (W - vw*esc)/2,
+        y: p.y*vh*esc + (H - vh*esc)/2
+    };
+}
+
+function dibujarGuia(lm, lado, profundo){
+    ctxCapa.clearRect(0,0,window.innerWidth,window.innerHeight);
+    if(!lm) return;
+
+    const pts = [lm[IDX[lado].cadera], lm[IDX[lado].rodilla], lm[IDX[lado].tobillo]];
+    if(!pts.every(visible)) return;
+
+    const a = pts.map(aPantalla);
+    const color = profundo ? "#2ecc71" : "#ffffff";
+
+    ctxCapa.lineWidth = 6;
+    ctxCapa.strokeStyle = color;
+    ctxCapa.globalAlpha = 0.85;
+    ctxCapa.beginPath();
+    ctxCapa.moveTo(a[0].x,a[0].y);
+    ctxCapa.lineTo(a[1].x,a[1].y);
+    ctxCapa.lineTo(a[2].x,a[2].y);
+    ctxCapa.stroke();
+
+    ctxCapa.fillStyle = color;
+    a.forEach(p => { ctxCapa.beginPath(); ctxCapa.arc(p.x,p.y,9,0,Math.PI*2); ctxCapa.fill(); });
+
+    const n = lm[IDX.nariz];
+    if(visible(n)){
+        const pn = aPantalla(n);
+        ctxCapa.beginPath(); ctxCapa.arc(pn.x,pn.y,10,0,Math.PI*2); ctxCapa.fill();
+    }
+    ctxCapa.globalAlpha = 1;
+}
+
+
+/* =====================================================
+   RESULTADOS DE POSE
+===================================================== */
+
+function onResultadosPose(res){
+
+    const lm = res.poseLandmarks || null;
+
+    if(estado === ESTADO.CALIBRANDO){
+        procesarCalibracion(lm);
+        return;
+    }
+
+    if(estado === ESTADO.CUENTA){
+        if(lm){
+            const lado = elegirLado(lm);
+            dibujarGuia(lm, lado, false);
+        } else {
+            dibujarGuia(null);
+        }
+        return;
+    }
+
+    if(estado === ESTADO.JUGANDO){
+        procesarSentadilla(lm);
+        return;
+    }
+
+    dibujarGuia(null);
+}
+
+
+/* =====================================================
+   CALIBRACIÓN
+   El alumno se mantiene de pie, quieto y de cuerpo completo.
+===================================================== */
+
+function iniciarCalibracion(){
+
+    estado = ESTADO.CALIBRANDO;
+    calib.inicioEstable = 0;
+    calib.muestras = [];
+    calib.votosLado = {izq:0, der:0};
+
+    document.getElementById("pantallaInicio").style.display = "none";
+    document.getElementById("mensajeFinal").style.display   = "none";
+    elGrande.style.display = "none";
+    elTiempo.textContent = DURACION_JUEGO;
+    elSent.textContent = "0";
+    actualizarHudIntentos();
+
+    mostrarCentral("mensajeCalib",
+        "Colócate <b>de perfil</b>, de pie y con el <b>cuerpo completo</b> visible.<br>Mantente quieto para calibrar…");
+    pista("Calibrando…");
+}
+
+function reiniciarCalibracionMuestras(msg){
+    calib.inicioEstable = 0;
+    calib.muestras = [];
+    calib.votosLado = {izq:0, der:0};
+    if(msg) mostrarCentral("mensajeCalib", msg);
+}
+
+function procesarCalibracion(lm){
+
+    if(!lm){
+        dibujarGuia(null);
+        reiniciarCalibracionMuestras("No te detecto. Colócate frente a la cámara, <b>de perfil</b> y de cuerpo completo.");
+        return;
+    }
+
+    const lado = elegirLado(lm);
+    dibujarGuia(lm, lado, false);
+
+    if(!cuerpoCompleto(lm, lado)){
+        reiniciarCalibracionMuestras("Aléjate un poco: debo verte <b>de la cabeza a los pies</b>.");
+        return;
+    }
+
+    const ang = anguloRodilla(lm, lado);
+    if(ang < 150){
+        reiniciarCalibracionMuestras("Ponte <b>de pie</b>, con las piernas extendidas.");
+        return;
+    }
+
+    const altura = lm[IDX[lado].tobillo].y - lm[IDX.nariz].y;
+    if(altura < 0.35){
+        reiniciarCalibracionMuestras("Estás muy lejos. <b>Acércate un poco</b> a la cámara.");
+        return;
+    }
+
+    const ahora = performance.now();
+    if(!calib.inicioEstable) calib.inicioEstable = ahora;
+
+    calib.muestras.push(altura);
+    calib.votosLado[lado]++;
+
+    const falta = Math.max(0, Math.ceil((CALIB_ESTABLE_MS - (ahora - calib.inicioEstable))/1000));
+    mostrarCentral("mensajeCalib",
+        `Perfecto, no te muevas…<br>Calibrando (${falta}s)`);
+
+    if(ahora - calib.inicioEstable >= CALIB_ESTABLE_MS && calib.muestras.length >= 12){
+        alturaPie  = mediana(calib.muestras);
+        ladoFinal  = calib.votosLado.izq >= calib.votosLado.der ? "izq" : "der";
+        iniciarCuentaRegresiva();
+    }
+}
+
+
+/* =====================================================
+   CUENTA REGRESIVA Y JUEGO
+===================================================== */
+
+function iniciarCuentaRegresiva(){
+
+    estado = ESTADO.CUENTA;
+    pista("Prepárate…");
+
+    let n = CUENTA_REGRESIVA;
+    mostrarCentral("cuentaNumero", n);
+    sonidoCuenta();
+
+    const iv = setInterval(() => {
+        n--;
+        if(n > 0){
+            mostrarCentral("cuentaNumero", n);
+            sonidoCuenta();
+        } else {
+            clearInterval(iv);
+            mostrarCentral("cuentaYa", "¡YA!");
+            sonidoYa();
+            setTimeout(limpiarCentral, 600);
+            iniciarJuego();
+        }
+    }, 1000);
+}
+
+function iniciarJuego(){
+
+    sentadillas = 0;
+    det.fase = "ARRIBA";
+    det.angulo = 180;
+    det.ratio = 1;
+    det.ultimaRep = 0;
+    det.tieneDatos = false;
+    guardado = false;
+
+    elSent.textContent = "0";
+    elGrande.textContent = "0";
+    elGrande.style.display = "block";
+    pista("¡Baja y sube!");
+
+    tiempoInicioJuego = performance.now();
+    estado = ESTADO.JUGANDO;
+
+    idTemporizador = setInterval(actualizarTemporizador, 100);
+}
+
+function actualizarTemporizador(){
+    if(estado !== ESTADO.JUGANDO) return;
+
+    const transcurrido = (performance.now() - tiempoInicioJuego) / 1000;
+    const restante = Math.max(0, Math.ceil(DURACION_JUEGO - transcurrido));
+    elTiempo.textContent = restante;
+
+    if(transcurrido >= DURACION_JUEGO) finalizarJuego();
+}
+
+
+/* =====================================================
+   DETECCIÓN DE SENTADILLAS
+   Una sentadilla es correcta cuando, en este orden:
+   1) la rodilla se flexiona a ANGULO_RODILLA_ABAJO o menos Y
+      la cabeza baja al menos CAIDA_CABEZA_MIN de la altura de pie;
+   2) vuelve a la posición de pie (rodilla >= ANGULO_RODILLA_ARRIBA
+      y altura recuperada >= RECUPERACION_ALTURA).
+===================================================== */
+
+function procesarSentadilla(lm){
+
+    if(!lm){
+        dibujarGuia(null);
+        pista("No te detecto. Colócate de perfil y de cuerpo completo.");
+        return;
+    }
+
+    const lado = ladoFinal;
+
+    if(!cuerpoCompleto(lm, lado)){
+        dibujarGuia(lm, lado, false);
+        pista("⚠ Debo verte de cuerpo completo");
+        return;
+    }
+
+    const angCrudo = anguloRodilla(lm, lado);
+    /* Relación entre la altura actual (tobillo - nariz) y la altura de pie */
+    const ratioCrudo = (lm[IDX[lado].tobillo].y - lm[IDX.nariz].y) / alturaPie;
+
+    /* Suavizado ligero para quitar temblor */
+    if(!det.tieneDatos){
+        det.angulo = angCrudo; det.ratio = ratioCrudo; det.tieneDatos = true;
+    } else {
+        det.angulo = 0.5*angCrudo  + 0.5*det.angulo;
+        det.ratio  = 0.5*ratioCrudo + 0.5*det.ratio;
+    }
+
+    const caida = 1 - det.ratio;
+    const profundo = det.angulo <= ANGULO_RODILLA_ABAJO && caida >= CAIDA_CABEZA_MIN;
+
+    dibujarGuia(lm, lado, det.fase === "ABAJO" || profundo);
+
+    if(det.fase === "ARRIBA"){
+
+        if(profundo){
+            det.fase = "ABAJO";
+            pista("¡Ahora sube!");
+        } else if(det.angulo < 140 || caida > 0.07){
+            pista("Baja un poco más");
+        } else {
+            pista("¡Baja y sube!");
+        }
+
+    } else { /* fase ABAJO: espera el regreso a la posición de pie */
+
+        if(det.angulo >= ANGULO_RODILLA_ARRIBA && det.ratio >= RECUPERACION_ALTURA){
+
+            det.fase = "ARRIBA";
+
+            const ahora = performance.now();
+            if(ahora - det.ultimaRep >= MIN_ENTRE_REPS_MS){
+                det.ultimaRep = ahora;
+                registrarSentadilla();
+            }
+
+        } else {
+            pista("¡Ahora sube!");
+        }
+
+    }
+
+}
+
+function registrarSentadilla(){
+
+    sentadillas++;
+
+    elSent.textContent   = sentadillas;
+    elGrande.textContent = sentadillas;
+
+    sonidoSentadilla();
+    pista("✔ ¡Sentadilla correcta!");
+
+    /* Indicador visual: destello verde y "+1" */
+    [elDestello, elMas1].forEach(el => {
+        el.classList.remove("activo");
+        void el.offsetWidth;
+        el.classList.add("activo");
+    });
+
+}
+
+
+/* =====================================================
+   FIN DE PARTIDA Y ENVÍO DEL RESULTADO
+===================================================== */
+
+function capturarFoto(){
+    try{
+        const vw = elVideo.videoWidth, vh = elVideo.videoHeight;
+        if(!vw || !vh) return "";
+        const ancho = 480;
+        const alto  = Math.round(ancho * vh / vw);
+        const c = document.createElement("canvas");
+        c.width = ancho; c.height = alto;
+        c.getContext("2d").drawImage(elVideo, 0, 0, ancho, alto);
+        return c.toDataURL("image/jpeg", 0.6);
+    }catch(e){
+        return "";
+    }
+}
+
+function finalizarJuego(){
+
+    if(estado === ESTADO.FIN) return;
+
+    estado = ESTADO.FIN;
+    clearInterval(idTemporizador);
+    elTiempo.textContent = "0";
+    elGrande.style.display = "none";
+    dibujarGuia(null);
+    limpiarCentral();
+
+    fotoFinal = capturarFoto();
+    sonidoFin();
+
+    document.getElementById("mensajeTitulo").textContent = "¡TIEMPO!";
+    document.getElementById("mensajePuntos").textContent =
+        `${sentadillas} sentadilla${sentadillas===1?"":"s"} = ${sentadillas} punto${sentadillas===1?"":"s"}`;
+    document.getElementById("mensajeGuardado").textContent = "Guardando resultado...";
+    document.getElementById("mensajeIntentos").textContent = "";
+    document.getElementById("btnJugarOtra").disabled = true;
+    document.getElementById("btnVolver").disabled = true;
+    document.getElementById("btnReintentarGuardar").style.display = "none";
+    document.getElementById("mensajeFinal").style.display = "flex";
+
+    guardarResultado();
+}
+
+async function guardarResultado(){
+
+    if(guardado) return;
+
+    const msg = document.getElementById("mensajeGuardado");
+    const btnRe = document.getElementById("btnReintentarGuardar");
+
+    btnRe.style.display = "none";
+    msg.textContent = "Guardando resultado...";
+
+    let enviado = false;
+
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+
+    try{
+
+        await fetch(SCRIPT_URL, {
+            method:  "POST",
+            mode:    "no-cors",
+            headers: {"Content-Type":"text/plain;charset=utf-8"},
+            body:    JSON.stringify({
+                nombre_alumno: nombre,
+                nombre_reto:   NOMBRE_RETO,
+                puntos:        sentadillas,
+                fig:           fotoFinal
+            }),
+            signal: ctrl.signal
+        });
+
+        enviado = true;
+
+    }catch(err){
+        console.error("Error al guardar:", err);
+    }
+
+    clearTimeout(timer);
+
+    if(enviado){
+
+        guardado = true;
+        intentosRealizados++;
+        msg.textContent = "Resultado guardado ✔";
+
+        const disp = intentosDisponibles();
+        const btnOtra = document.getElementById("btnJugarOtra");
+        const msgInt  = document.getElementById("mensajeIntentos");
+
+        if(disp > 0){
+            btnOtra.disabled = false;
+            btnOtra.textContent = "VOLVER A JUGAR";
+            msgInt.textContent = `Te quedan ${disp} intento${disp===1?"":"s"} hoy en este reto.`;
+        } else {
+            btnOtra.disabled = true;
+            btnOtra.textContent = "SIN INTENTOS DISPONIBLES";
+            msgInt.textContent = "Alcanzaste el máximo de intentos de hoy en este reto.";
+        }
+
+        document.getElementById("btnVolver").disabled = false;
+
+    } else {
+
+        msg.textContent = "No se pudo confirmar el guardado. Revisa tu conexión.";
+        btnRe.style.display = "block";
+
+    }
+
+}
+
+document.getElementById("btnReintentarGuardar").addEventListener("click", guardarResultado);
+
+function regresarPortal(){
+    const p = new URLSearchParams({nombre, edad, reto, estatura, peso});
+    window.location.href = `${PORTAL_URL}?${p.toString()}`;
+}
+
+document.getElementById("btnVolver").addEventListener("click", regresarPortal);
+
+document.getElementById("btnJugarOtra").addEventListener("click", () => {
+    if(document.getElementById("btnJugarOtra").disabled) return;
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    iniciarCalibracion();
+});
+
+
+/* =====================================================
+   VERIFICAR INTENTOS (Apps Script) — misma lógica que Laberinto
+===================================================== */
+
+function normalizar(t){
+    return String(t ?? "")
+        .normalize("NFD").replace(/[̀-ͯ]/g,"")
+        .trim().toUpperCase();
+}
+
+async function verificarIntentos(){
+
+    if(!nombre){
+        elEstadoInt.textContent = "Abre el juego desde el portal de Retos.";
+        intentosVerificados = true;
+        limiteAlcanzado = true;
+        actualizarBoton();
+        return;
+    }
+
+    try{
+
+        const response = await fetch(SCRIPT_URL);
+        const data     = await response.json();
+
+        const lista = data.retos || data.catalogo || [];
+
+        const retoInfo = lista.find(r =>
+            normalizar(r.nombre ?? r.Nombre_Reto ?? r.nombre_reto) === normalizar(NOMBRE_RETO)
+        );
+
+        if(!retoInfo){
+            elEstadoInt.textContent = "Reto no encontrado en el catálogo.";
+            intentosVerificados = true;
+            limiteAlcanzado = false;
+            actualizarBoton();
+            return;
+        }
+
+        intentosPermitidos = Number(
+            retoInfo.diario_permitido ?? retoInfo.Diario_Permitido ?? 0
+        ) || 0;
+
+        /* Clave "nombre_40 SENTADILLAS" ignorando mayúsculas/acentos */
+        const claveBuscada = normalizar(`${nombre}_${NOMBRE_RETO}`);
+        const mapa = data.intentosHoy || {};
+
+        intentosRealizados = 0;
+
+        for(const k of Object.keys(mapa)){
+            if(normalizar(k) === claveBuscada){
+                intentosRealizados = Number(mapa[k]) || 0;
+                break;
+            }
+        }
+
+        const disponibles = intentosPermitidos - intentosRealizados;
+
+        limiteAlcanzado = disponibles <= 0;
+        elEstadoInt.textContent = disponibles > 0
+            ? `Intentos disponibles hoy: ${disponibles}`
+            : "Has alcanzado el límite diario de intentos. Podrás jugar de nuevo mañana.";
+
+        intentosVerificados = true;
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        elEstadoInt.textContent = "Sin conexión con el servidor — se permite continuar.";
+        limiteAlcanzado = false;
+        intentosVerificados = true;
+
+    }
+
+    actualizarHudIntentos();
+    actualizarBoton();
+
+}
+
+function actualizarBoton(){
+
+    if(camaraError){
+        elBtnIniciar.disabled = true;
+        elBtnIniciar.textContent = "CÁMARA NO DISPONIBLE";
+        return;
+    }
+
+    if(intentosVerificados && limiteAlcanzado){
+        elBtnIniciar.disabled = true;
+        elBtnIniciar.textContent = "LÍMITE ALCANZADO";
+        return;
+    }
+
+    if(camaraLista && intentosVerificados){
+        elBtnIniciar.disabled = false;
+        elBtnIniciar.textContent = "INICIAR";
+        return;
+    }
+
+    elBtnIniciar.disabled = true;
+    elBtnIniciar.textContent = "INICIAR";
+
+}
+
+elBtnIniciar.addEventListener("click", () => {
+    if(elBtnIniciar.disabled) return;
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    try{ if(navigator.wakeLock) navigator.wakeLock.request("screen").catch(()=>{}); }catch(e){}
+    iniciarCalibracion();
+});
+
+
+/* =====================================================
+   CÁMARA FRONTAL + MEDIAPIPE POSE
+===================================================== */
+
+const pose = new Pose({
+    locateFile: (archivo) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${archivo}`
+});
+
+pose.setOptions({
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+});
+
+pose.onResults(onResultadosPose);
+
+let procesando = false;
+
+async function bucleDeteccion(){
+
+    if(!procesando && elVideo.readyState >= 2 &&
+       (estado === ESTADO.CALIBRANDO || estado === ESTADO.CUENTA || estado === ESTADO.JUGANDO)){
+
+        procesando = true;
+        try{ await pose.send({ image: elVideo }); }catch(e){ console.warn(e); }
+        procesando = false;
+
+    }
+
+    requestAnimationFrame(bucleDeteccion);
+
+}
+
+async function iniciarCamara(){
+
+    try{
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: 1280, height: 720 },
+            audio: false
+        });
+
+        elVideo.srcObject = stream;
+
+        await new Promise(res => { elVideo.onloadedmetadata = res; });
+        try{ await elVideo.play(); }catch(e){}
+
+        elEstadoCam.textContent = "Cargando detección de movimiento...";
+        await pose.initialize();
+
+        camaraLista = true;
+        elEstadoCam.textContent = "Cámara lista ✔";
+
+        requestAnimationFrame(bucleDeteccion);
+
+    }catch(error){
+
+        console.error("Error al iniciar la cámara:", error);
+        camaraError = true;
+        elEstadoCam.textContent = "No se pudo acceder a la cámara. Revisa los permisos del navegador.";
+
+    }
+
+    actualizarBoton();
+
+}
+
+
+/* =====================================================
+   INICIALIZACIÓN
+===================================================== */
+
+iniciarCamara();
+verificarIntentos();
+
+</script>
+
+</body>
+</html>
