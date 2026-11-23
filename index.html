@@ -382,6 +382,17 @@ function cuerpoCompleto(lm, lado){
     return true;
 }
 
+/* Nivel del piso: el tobillo MÁS BAJO de ambos pies. Así, si el alumno
+   levanta una rodilla/pie, la altura de la cabeza no se "reduce" falsamente. */
+function sueloY(lm, lado){
+    let y = lm[IDX[lado].tobillo].y;
+    ["izq","der"].forEach(l => {
+        const t = lm[IDX[l].tobillo];
+        if(t && (t.visibility === undefined || t.visibility >= 0.3) && t.y > y) y = t.y;
+    });
+    return y;
+}
+
 function mediana(arr){
     const o = [...arr].sort((a,b)=>a-b);
     return o[Math.floor(o.length/2)];
@@ -528,7 +539,7 @@ function procesarCalibracion(lm){
         return;
     }
 
-    const altura = lm[IDX[lado].tobillo].y - lm[IDX.nariz].y;
+    const altura = sueloY(lm, lado) - lm[IDX.nariz].y;
     if(altura < 0.35){
         reiniciarCalibracionMuestras("Estás muy lejos. <b>Acércate un poco</b> a la cámara.");
         return;
@@ -639,7 +650,7 @@ function procesarSentadilla(lm){
 
     const angCrudo = anguloRodilla(lm, lado);
     /* Relación entre la altura actual (tobillo - nariz) y la altura de pie */
-    const ratioCrudo = (lm[IDX[lado].tobillo].y - lm[IDX.nariz].y) / alturaPie;
+    const ratioCrudo = (sueloY(lm, lado) - lm[IDX.nariz].y) / alturaPie;
 
     /* Suavizado ligero para quitar temblor */
     if(!det.tieneDatos){
